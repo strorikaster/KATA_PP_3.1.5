@@ -21,15 +21,19 @@ public class App
         List<User> allUsers = communication.getAllUsers();
         System.out.println(allUsers);
 
-        User user = new User(3l, "James", "Brown", (byte) 34);
-        communication.saveUser(user);
-        User user1 = new User(3l,"Thomas", "Shelby", (byte)34);
-        communication.updateUser(user1);
-//        User userReceivedByID = communication.getOneUser(1L);
-//        System.out.println(userReceivedByID);
 
-//        User user = new User(5L, "Sveta", "Sokolova", (byte)23);
-//        communication.saveUser(user);
+
+        User user = new User(3L,"James", "Brown", (byte) 34);
+
+        communication.saveUser(user);
+
+        user.setId(3L);
+        user.setName("Thomas");
+        user.setLastName("Shelby");
+        user.setAge((byte)34);
+        communication.updateUser(user);
+
+        communication.deleteUser(3L);
 
     }
 }

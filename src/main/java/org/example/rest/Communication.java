@@ -3,13 +3,11 @@ package org.example.rest;
 import org.example.rest.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,53 +19,42 @@ public class Communication {
     private RestTemplate restTemplate;
     private final String URL = "http://94.198.50.185:7081/api/users";
 
-    List<String> sessionId;
-    String headers = "";
+    List<String> cookies = new ArrayList<>();
+    HttpHeaders httpHeaders = new HttpHeaders();
+
+    public HttpHeaders getHttpHeaders() {
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.set("Cookie", cookies.stream().collect(Collectors.joining(";")));
+        return  httpHeaders;
+    }
 
     public List<User> getAllUsers() {
         ResponseEntity<List<User>> responseEntity = restTemplate.exchange(URL, HttpMethod.GET, null, new ParameterizedTypeReference<List<User>>() {});
-        List<User> allUsers = responseEntity.getBody();
-        sessionId = responseEntity.getHeaders().get("Set-Cookie")/*.get(0).split(";")[0]*/;
-        headers =  sessionId.stream().collect(Collectors.joining(";"));
-        System.out.println(sessionId);
-        return allUsers;
+        //List<User> allUsers = responseEntity.getBody();
+        cookies = responseEntity.getHeaders().get("Set-Cookie");
+        //System.out.println(cookies);
+        return responseEntity.getBody();
     }
 
-//    public User getOneUser(Long id) {
-//        User user = restTemplate.getForObject(URL + "/" + id, User.class);
-//        return user;
-//    }
-
-    //String headers =  sessionId.stream().collect(Collectors.joining(";"));
-
     public void saveUser(User user) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-        httpHeaders.set("Cookie", headers);
-        //Long id = user.getId();
-        //if(id == 0) {
-        ResponseEntity<String> responseEntity = restTemplate.postForEntity(URL, user, String.class);
-        System.out.println("New user added to database");
-        System.out.println(responseEntity.getBody());
-//       } else {
+        HttpEntity<User> entity = new HttpEntity<>(user, getHttpHeaders());
+        String request = restTemplate.postForEntity(URL, entity, String.class).getBody();
+        new ResponseEntity<>(request, HttpStatus.OK);
+        System.out.println(request);
     }
 
         public void updateUser(User user) {
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            httpHeaders.set("Cookie", headers);
-           restTemplate.put(URL, user);
-           ///System.out.println("User with id " + id + " was updated");
-       }
+            HttpEntity<User> entity = new HttpEntity<>(user,getHttpHeaders());
+            String request = restTemplate.exchange(URL, HttpMethod.PUT, entity, String.class).getBody();
+            System.out.println(request);
+        }
 
 
 
     public void deleteUser(Long id) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-        httpHeaders.set("Cookie", sessionId.stream().collect(Collectors.joining(";")));
-        restTemplate.delete(URL + "/" +id);
-        System.out.println("User with id " + id + " was deleted");
+        HttpEntity<User> entity = new HttpEntity<>(getHttpHeaders());
+        String request = restTemplate.exchange(URL + "/" + id, HttpMethod.DELETE, entity, String.class).getBody();
+        System.out.println(request);
     }
 
 }
